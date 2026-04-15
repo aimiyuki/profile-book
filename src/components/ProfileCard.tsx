@@ -233,7 +233,7 @@ function PersonalDataSection({
                 <>
                   <span
                     key={`${item.key}-mobile`}
-                    className={`absolute left-[-16%] top-[84%] rounded-md bg-white/75 px-1 py-0.5 text-center text-[7px] font-black leading-tight md:hidden ${item.labelClassName}`}
+                    className={`absolute left-[-24%] top-[85%] rounded-md bg-white/75 px-1 py-0.5 text-center text-[7px] font-black leading-tight md:hidden ${item.labelClassName}`}
                     style={{ transform: "translateY(-50%)", width: "5.5rem" }}
                   >
                     {item.label}
