@@ -597,7 +597,7 @@ export default function ProfileCard() {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center py-6 px-3">
       <button onClick={saveAsImage} disabled={saving}
-        className="mb-4 px-6 py-3 rounded-full font-bold text-sm shadow-lg hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2"
+        className="mb-4 hidden px-6 py-3 rounded-full font-bold text-sm shadow-lg hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 md:flex items-center gap-2"
         style={{ background: "linear-gradient(135deg, oklch(0.75 0.15 140), oklch(0.7 0.18 180))", color: "white" }}>
         <span>📸</span>{saving ? "保存中..." : "プロフ帳を保存する"}
       </button>
@@ -858,6 +858,15 @@ export default function ProfileCard() {
       <p className="text-muted-foreground text-xs mt-3 text-center">
         入力して「プロフ帳を保存する」を押すとJPEG画像としてダウンロードできます 📲
       </p>
+
+      <button
+        onClick={saveAsImage}
+        disabled={saving}
+        className="mt-4 flex px-6 py-3 rounded-full font-bold text-sm shadow-lg hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 md:hidden items-center gap-2"
+        style={{ background: "linear-gradient(135deg, oklch(0.75 0.15 140), oklch(0.7 0.18 180))", color: "white" }}
+      >
+        <span>📸</span>{saving ? "保存中..." : "プロフ帳を保存する"}
+      </button>
     </div>
   );
 }
