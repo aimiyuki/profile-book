@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback } from "react";
-import html2canvas from "html2canvas";
+import { toCanvas } from "html-to-image";
 import { BinderHoles, MusicNotes, FlowerCluster, GemStone, Sparkle, LaceEdge, CloverIcon } from "./Decorations";
 
 type PersonalStatKey = "stamina" | "angerControl" | "sense" | "intelligence" | "action" | "luck";
@@ -138,9 +138,9 @@ function QRow({ label, after, v1, o1, p1, v2, o2, p2, after2 }: {
 
 function Fav({ label, v, o }: { label: string; v: string; o: (v: string) => void }) {
   return (
-    <div className="flex items-center gap-0.5">
-      <span className="text-xs font-bold shrink-0">{label}</span>
-      <EField value={v} onChange={o} placeholder="" className="flex-1 w-0 text-xs" />
+    <div className="grid grid-cols-[max-content_minmax(0,1fr)] items-center gap-1">
+      <span className="text-xs font-bold whitespace-nowrap">{label}</span>
+      <EField value={v} onChange={o} placeholder="" className="w-full min-w-0 text-xs" />
     </div>
   );
 }
@@ -454,13 +454,57 @@ export default function ProfileCard() {
     if (!cardRef.current || saving) return;
     setSaving(true);
     try {
-      cardRef.current.querySelectorAll("input, textarea").forEach((el) => (el as HTMLElement).blur());
-      await new Promise((r) => setTimeout(r, 100));
-      const canvas = await html2canvas(cardRef.current, { scale: 2, useCORS: true, backgroundColor: null });
-      const link = document.createElement("a");
-      link.download = "my-profile.jpg";
-      link.href = canvas.toDataURL("image/jpeg", 0.95);
-      link.click();
+      const source = cardRef.current;
+      if ("fonts" in document) {
+        await document.fonts.ready;
+      }
+      source.querySelectorAll("input, textarea").forEach((el) => (el as HTMLElement).blur());
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+
+      const exportWidth = Math.ceil(source.offsetWidth);
+      const exportHeight = Math.ceil(source.offsetHeight);
+      const capturedCanvas = await toCanvas(source, {
+        backgroundColor: "#ffffff",
+        cacheBust: true,
+        pixelRatio: 2,
+        width: exportWidth,
+        height: exportHeight,
+        canvasWidth: exportWidth * 2,
+        canvasHeight: exportHeight * 2,
+      });
+
+      const exportPadding = 12;
+      const paddedCanvas = document.createElement("canvas");
+      paddedCanvas.width = capturedCanvas.width + exportPadding * 2;
+      paddedCanvas.height = capturedCanvas.height + exportPadding * 2;
+      const paddedContext = paddedCanvas.getContext("2d");
+      if (!paddedContext) return;
+      paddedContext.fillStyle = "#ffffff";
+      paddedContext.fillRect(0, 0, paddedCanvas.width, paddedCanvas.height);
+      paddedContext.drawImage(capturedCanvas, exportPadding, exportPadding);
+
+      const blob = await new Promise<Blob | null>((resolve) => {
+        paddedCanvas.toBlob((b) => resolve(b), "image/jpeg", 0.95);
+      });
+
+      const triggerDownload = (href: string) => {
+        const link = document.createElement("a");
+        link.href = href;
+        link.download = "my-profile.jpg";
+        link.rel = "noopener";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        triggerDownload(url);
+        URL.revokeObjectURL(url);
+        return;
+      }
+
+      triggerDownload(paddedCanvas.toDataURL("image/jpeg", 0.95));
     } catch (err) { console.error(err); }
     finally { setSaving(false); }
   };
@@ -470,7 +514,7 @@ export default function ProfileCard() {
       <button onClick={saveAsImage} disabled={saving}
         className="mb-4 px-6 py-3 rounded-full font-bold text-sm shadow-lg hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2"
         style={{ background: "linear-gradient(135deg, oklch(0.75 0.15 140), oklch(0.7 0.18 180))", color: "white" }}>
-        <span>📸</span>{saving ? "保存中..." : "画像を保存する"}
+        <span>📸</span>{saving ? "保存中..." : "プロフ帳を保存する"}
       </button>
 
       {/* Main Card - Two page notebook spread */}
@@ -478,7 +522,7 @@ export default function ProfileCard() {
         style={{ background: "oklch(0.96 0.02 90)" }}>
 
         {/* ===== LEFT PAGE ===== */}
-        <div className="w-1/2 relative overflow-visible"
+        <div data-export-page="left" className="w-1/2 relative overflow-visible"
           style={{ background: "linear-gradient(180deg, oklch(0.88 0.1 140), oklch(0.92 0.06 90), oklch(0.9 0.08 350))" }}>
           <BinderHoles side="right" />
           <div className="relative z-10 pr-4 pl-4 py-4 flex flex-col gap-3" style={{ fontSize: "clamp(9px, 1.6vw, 12px)" }}>
@@ -488,7 +532,7 @@ export default function ProfileCard() {
               style={{ background: "linear-gradient(135deg, oklch(0.88 0.12 140) 0%, oklch(0.92 0.08 100) 50%, oklch(0.85 0.1 140) 100%)", border: "2px solid oklch(0.7 0.15 140 / 0.4)" }}>
               <LaceEdge color="oklch(0.7 0.15 140)" />
               <div className="flex items-center justify-between mb-2">
-                <h2 className="font-black text-lg tracking-wider" style={{ color: "oklch(0.5 0.15 140)" }}>🌿 おともだちデータ</h2>
+                <h2 className="font-black text-lg tracking-wider" style={{ color: "oklch(0.5 0.15 140)" }}>♡プロフ帳</h2>
                 <CloverIcon />
               </div>
               <div className="flex gap-3">
@@ -510,7 +554,7 @@ export default function ProfileCard() {
                 </div>
                 <label className="shrink-0 w-20 h-24 rounded-lg flex items-center justify-center cursor-pointer overflow-hidden"
                   style={{ border: "2px dashed oklch(0.6 0.12 140 / 0.5)", background: "oklch(0.95 0.04 140 / 0.5)" }}>
-                  {photo ? <img src={photo} alt="Photo" className="w-full h-full object-cover" />
+                  {photo ? <img src={photo} alt="Photo" className="w-full h-full object-contain" />
                     : <div className="text-center text-xs leading-tight" style={{ color: "oklch(0.5 0.1 140)" }}>
                       <div className="text-xl mb-1">📷</div>にがおえ<br />or 写真
                     </div>}
@@ -597,7 +641,7 @@ export default function ProfileCard() {
         </div>
 
         {/* ===== RIGHT PAGE ===== */}
-        <div className="w-1/2 relative overflow-visible"
+        <div data-export-page="right" className="w-1/2 relative overflow-visible"
           style={{ background: "linear-gradient(180deg, oklch(0.9 0.08 350), oklch(0.88 0.06 270), oklch(0.85 0.06 230))" }}>
           <BinderHoles side="left" />
           <div className="relative z-10 pr-4 pl-4 py-4 flex flex-col gap-3" style={{ fontSize: "clamp(9px, 1.6vw, 12px)" }}>
@@ -719,7 +763,7 @@ export default function ProfileCard() {
       </div>
 
       <p className="text-muted-foreground text-xs mt-3 text-center">
-        入力して「画像を保存する」を押すとJPEG画像としてダウンロードできます 📲
+        入力して「プロフ帳を保存する」を押すとJPEG画像としてダウンロードできます 📲
       </p>
     </div>
   );
