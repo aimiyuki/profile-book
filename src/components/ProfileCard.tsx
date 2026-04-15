@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback } from "react";
+import { flushSync } from "react-dom";
 import { toCanvas } from "html-to-image";
 import { BinderHoles, MusicNotes, FlowerCluster, GemStone, Sparkle, LaceEdge, CloverIcon } from "./Decorations";
 
@@ -223,47 +224,74 @@ function PersonalDataSection({
         My Graph
       </h3>
 
-      <div className="relative h-[260px] pt-3 pb-2">
-        {PERSONAL_STAT_CONFIG.map((item, index) => {
-          const point = radarPoint(index, labelRadius);
-          return (
-            <span
-              key={item.key}
-              className={`absolute text-[12px] font-black px-1.5 py-0.5 rounded-md bg-white/75 ${item.labelClassName}`}
-              style={{
-                left: `${(point.x / 200) * 100}%`,
-                top: `${(point.y / 170) * 100}%`,
-                transform: labelTransforms[index],
-              }}
-            >
-              {item.label}
-            </span>
-          );
-        })}
+      <div className="relative h-[230px] pt-2 pb-1 md:h-[260px] md:pt-3 md:pb-2">
+        <div className="absolute left-1/2 top-1 w-[200px] h-[170px] -translate-x-1/2 scale-[0.88] origin-top md:inset-0 md:h-full md:w-full md:translate-x-0 md:scale-100">
+          {PERSONAL_STAT_CONFIG.map((item, index) => {
+            const point = radarPoint(index, labelRadius);
+            if (item.key === "angerControl") {
+              return (
+                <>
+                  <span
+                    key={`${item.key}-mobile`}
+                    className={`absolute left-[-16%] top-[84%] rounded-md bg-white/75 px-1 py-0.5 text-center text-[7px] font-black leading-tight md:hidden ${item.labelClassName}`}
+                    style={{ transform: "translateY(-50%)", width: "5.5rem" }}
+                  >
+                    {item.label}
+                  </span>
+                  <span
+                    key={`${item.key}-desktop`}
+                    className={`absolute hidden px-1.5 py-0.5 rounded-md bg-white/75 md:inline text-[12px] font-black ${item.labelClassName}`}
+                    style={{
+                      left: `${(point.x / 200) * 100}%`,
+                      top: `${(point.y / 170) * 100}%`,
+                      transform: labelTransforms[index],
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                </>
+              );
+            }
 
-        <svg viewBox="0 0 200 170" className="absolute inset-0 h-full w-full">
-          {[15, 30, 45, 60, 75].map((r) => (
+            return (
+              <span
+                key={item.key}
+                className={`absolute text-[12px] font-black px-1.5 py-0.5 rounded-md bg-white/75 ${item.labelClassName}`}
+                style={{
+                  left: `${(point.x / 200) * 100}%`,
+                  top: `${(point.y / 170) * 100}%`,
+                  transform: labelTransforms[index],
+                }}
+              >
+                {item.label}
+              </span>
+            );
+          })}
+
+          <svg viewBox="0 0 200 170" className="absolute inset-0 h-full w-full">
+            {[15, 30, 45, 60, 75].map((r) => (
+              <polygon
+                key={r}
+                points={PERSONAL_STAT_CONFIG.map((_, index) => {
+                  const point = radarPoint(index, r);
+                  return `${point.x},${point.y}`;
+                }).join(" ")}
+                fill="none"
+                stroke="oklch(0.86 0.01 0)"
+                strokeWidth="1.2"
+              />
+            ))}
             <polygon
-              key={r}
-              points={PERSONAL_STAT_CONFIG.map((_, index) => {
-                const point = radarPoint(index, r);
-                return `${point.x},${point.y}`;
-              }).join(" ")}
-              fill="none"
-              stroke="oklch(0.86 0.01 0)"
-              strokeWidth="1.2"
+              points={radarFillPoints}
+              fill="oklch(0.76 0.14 330 / 0.35)"
+              stroke="oklch(0.64 0.18 330 / 0.85)"
+              strokeWidth="1.8"
             />
-          ))}
-          <polygon
-            points={radarFillPoints}
-            fill="oklch(0.76 0.14 330 / 0.35)"
-            stroke="oklch(0.64 0.18 330 / 0.85)"
-            strokeWidth="1.8"
-          />
-        </svg>
+          </svg>
+        </div>
       </div>
 
-      <div className="mt-10 grid grid-cols-2 gap-2">
+      <div className="mt-4 grid grid-cols-2 gap-2 md:mt-10">
         {PERSONAL_STAT_CONFIG.map((item) => (
           <div key={item.key} className="rounded-lg bg-white/55 px-1.5 py-1">
             <div className="text-[10px] font-black leading-tight mb-1">{item.label}</div>
@@ -298,13 +326,49 @@ function PersonalDataSection({
 function SecretCloudSection({
   data,
   onChange,
+  desktopMode = false,
 }: {
   data: Pick<ProfileData, "secretStarText" | "secretHeartText" | "secretFlowerText">;
   onChange: (key: "secretStarText" | "secretHeartText" | "secretFlowerText") => (value: string) => void;
+  desktopMode?: boolean;
 }) {
+  const desktopStarStyle = desktopMode
+    ? {
+        position: "absolute" as const,
+        left: "20%",
+        top: 116,
+        width: 180,
+        height: 160,
+        transform: "translateX(-50%)",
+      }
+    : undefined;
+  const desktopHeartStyle = desktopMode
+    ? {
+        position: "absolute" as const,
+        left: "50%",
+        top: 18,
+        width: 228,
+        height: 170,
+        transform: "translateX(-50%)",
+      }
+    : undefined;
+  const desktopFlowerStyle = desktopMode
+    ? {
+        position: "absolute" as const,
+        left: "80%",
+        top: 120,
+        width: 190,
+        height: 185,
+        transform: "translateX(-50%)",
+      }
+    : undefined;
+  const desktopCatStyle = desktopMode
+    ? { position: "absolute" as const, left: "50%", top: 268, transform: "translateX(-50%)" }
+    : undefined;
+
   return (
     <div
-      className="relative rounded-xl overflow-hidden p-4 min-h-[280px]"
+      className={`relative rounded-xl overflow-hidden p-4 ${desktopMode ? "min-h-[320px]" : "min-h-[280px]"}`}
       style={{
         background: "linear-gradient(180deg, oklch(0.95 0.04 350), oklch(0.94 0.03 20))",
         border: "2px solid oklch(0.82 0.06 330 / 0.45)",
@@ -330,10 +394,11 @@ function SecretCloudSection({
           ✦
         </div>
       ))}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-5xl opacity-55">🐱</div>
-
-      <div className="relative h-[250px]">
-        <div className="absolute left-3 top-20 h-36 w-40 z-10">
+      <div className={`relative ${desktopMode ? "block h-[340px]" : "flex flex-col items-center gap-4 py-2 md:block md:h-[250px] md:py-0"}`}>
+        <div
+          className={`relative h-36 w-40 z-10 ${desktopMode ? "" : "md:absolute md:left-3 md:top-20"}`}
+          style={desktopStarStyle}
+        >
           <svg viewBox="0 0 120 100" className="h-full w-full">
             <path
               d="M60 5 L72 36 L106 36 L79 56 L89 90 L60 70 L31 90 L41 56 L14 36 L48 36 Z"
@@ -355,7 +420,10 @@ function SecretCloudSection({
           />
         </div>
 
-        <div className="absolute left-1/2 top-8 h-36 w-48 -translate-x-1/2 z-20">
+        <div
+          className={`relative h-36 w-48 z-20 ${desktopMode ? "" : "md:absolute md:left-1/2 md:top-8 md:-translate-x-1/2"}`}
+          style={desktopHeartStyle}
+        >
           <svg viewBox="0 0 160 120" className="h-full w-full">
             <path
               d="M80 106 C48 82 20 60 20 36 C20 21 32 10 48 10 C61 10 72 17 80 29 C88 17 99 10 112 10 C128 10 140 21 140 36 C140 60 112 82 80 106 Z"
@@ -377,7 +445,10 @@ function SecretCloudSection({
           />
         </div>
 
-        <div className="absolute right-6 top-20 h-34 w-34 z-10">
+        <div
+          className={`relative h-32 w-32 z-10 ${desktopMode ? "" : "md:absolute md:right-6 md:top-20"}`}
+          style={desktopFlowerStyle}
+        >
           <svg viewBox="0 0 120 120" className="h-full w-full">
             <path
               d="M60 90
@@ -403,7 +474,7 @@ function SecretCloudSection({
             />
           </svg>
           <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-[125px] text-center text-sm leading-tight font-black whitespace-normal" style={{ color: "oklch(0.66 0.13 230)" }}>
-            今だから言える話
+            5年後の自分へ
           </span>
           <textarea
             value={data.secretFlowerText}
@@ -412,6 +483,13 @@ function SecretCloudSection({
             rows={3}
             className="absolute top-[49%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[96px] resize-none border-0 bg-transparent text-center text-[11px] leading-tight text-slate-700 placeholder:opacity-45 outline-none"
           />
+        </div>
+
+        <div
+          className={`relative z-30 text-center text-5xl opacity-55 ${desktopMode ? "" : "mt-1 md:absolute md:bottom-4 md:left-1/2 md:mt-0 md:-translate-x-1/2"}`}
+          style={desktopCatStyle}
+        >
+          🐱
         </div>
       </div>
     </div>
@@ -431,6 +509,7 @@ export default function ProfileCard() {
   });
   const [photo, setPhoto] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [exportDesktopMode, setExportDesktopMode] = useState(false);
 
   const u = useCallback(
     (key: keyof ProfileData) => (value: string) => setData((p) => ({ ...p, [key]: value })),
@@ -454,6 +533,9 @@ export default function ProfileCard() {
     if (!cardRef.current || saving) return;
     setSaving(true);
     try {
+      flushSync(() => setExportDesktopMode(true));
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
       const source = cardRef.current;
       if ("fonts" in document) {
         await document.fonts.ready;
@@ -506,7 +588,10 @@ export default function ProfileCard() {
 
       triggerDownload(paddedCanvas.toDataURL("image/jpeg", 0.95));
     } catch (err) { console.error(err); }
-    finally { setSaving(false); }
+    finally {
+      flushSync(() => setExportDesktopMode(false));
+      setSaving(false);
+    }
   };
 
   return (
@@ -518,14 +603,20 @@ export default function ProfileCard() {
       </button>
 
       {/* Main Card - Two page notebook spread */}
-      <div ref={cardRef} className="w-full max-w-[1080px] relative overflow-hidden rounded-2xl flex flex-row"
-        style={{ background: "oklch(0.96 0.02 90)" }}>
+      <div
+        ref={cardRef}
+        className={`w-full max-w-[1080px] relative overflow-hidden rounded-2xl flex ${exportDesktopMode ? "flex-row" : "flex-col md:flex-row"}`}
+        style={{
+          background: "oklch(0.96 0.02 90)",
+          width: exportDesktopMode ? "1080px" : undefined,
+        }}
+      >
 
         {/* ===== LEFT PAGE ===== */}
-        <div data-export-page="left" className="w-1/2 relative overflow-visible"
+        <div data-export-page="left" className={`${exportDesktopMode ? "w-1/2" : "w-full md:w-1/2"} relative overflow-visible`}
           style={{ background: "linear-gradient(180deg, oklch(0.88 0.1 140), oklch(0.92 0.06 90), oklch(0.9 0.08 350))" }}>
           <BinderHoles side="right" />
-          <div className="relative z-10 pr-4 pl-4 py-4 flex flex-col gap-3" style={{ fontSize: "clamp(9px, 1.6vw, 12px)" }}>
+          <div className="relative z-10 pr-4 pl-4 py-4 flex flex-col gap-3" style={{ fontSize: exportDesktopMode ? "12px" : "clamp(9px, 1.6vw, 12px)" }}>
 
             {/* My Profile */}
             <div className="relative rounded-xl p-3 overflow-hidden"
@@ -535,7 +626,7 @@ export default function ProfileCard() {
                 <h2 className="font-black text-lg tracking-wider" style={{ color: "oklch(0.5 0.15 140)" }}>♡プロフ帳</h2>
                 <CloverIcon />
               </div>
-              <div className="flex gap-3">
+              <div className={`flex gap-3 ${exportDesktopMode ? "flex-row" : "flex-col sm:flex-row"}`}>
                 <div className="flex-1 space-y-1.5" style={{ color: "oklch(0.4 0.1 140)" }}>
                   <div className="flex items-center gap-1">
                     <span className="font-bold shrink-0">Name</span>
@@ -552,7 +643,7 @@ export default function ProfileCard() {
                     <EField value={data.location} onChange={u("location")} placeholder="" className="flex-1 w-0" />
                   </div>
                 </div>
-                <label className="shrink-0 w-20 h-24 rounded-lg flex items-center justify-center cursor-pointer overflow-hidden"
+                <label className={`${exportDesktopMode ? "" : "mx-auto sm:mx-0"} shrink-0 w-20 h-24 rounded-lg flex items-center justify-center cursor-pointer overflow-hidden`}
                   style={{ border: "2px dashed oklch(0.6 0.12 140 / 0.5)", background: "oklch(0.95 0.04 140 / 0.5)" }}>
                   {photo ? <img src={photo} alt="Photo" className="w-full h-full object-contain" />
                     : <div className="text-center text-xs leading-tight" style={{ color: "oklch(0.5 0.1 140)" }}>
@@ -633,21 +724,23 @@ export default function ProfileCard() {
         </div>
 
         {/* Center spine line */}
-        <div className="relative w-6 shrink-0">
+        <div className={`relative shrink-0 ${exportDesktopMode ? "h-auto w-6" : "h-6 w-full md:h-auto md:w-6"}`}>
           <div
-            className="absolute inset-y-0 left-1/2 w-[2px] -translate-x-1/2"
+            className={exportDesktopMode
+              ? "absolute inset-y-0 left-1/2 top-0 w-[2px] -translate-x-1/2"
+              : "absolute inset-x-0 top-1/2 h-[2px] -translate-y-1/2 md:inset-y-0 md:left-1/2 md:top-0 md:h-auto md:w-[2px] md:-translate-x-1/2 md:translate-y-0"}
             style={{ background: "linear-gradient(180deg, oklch(0.8 0.08 140), oklch(0.75 0.1 350), oklch(0.8 0.08 230))" }}
           />
         </div>
 
         {/* ===== RIGHT PAGE ===== */}
-        <div data-export-page="right" className="w-1/2 relative overflow-visible"
+        <div data-export-page="right" className={`${exportDesktopMode ? "w-1/2" : "w-full md:w-1/2"} relative overflow-visible`}
           style={{ background: "linear-gradient(180deg, oklch(0.9 0.08 350), oklch(0.88 0.06 270), oklch(0.85 0.06 230))" }}>
           <BinderHoles side="left" />
-          <div className="relative z-10 pr-4 pl-4 py-4 flex flex-col gap-3" style={{ fontSize: "clamp(9px, 1.6vw, 12px)" }}>
+          <div className="relative z-10 pr-4 pl-4 py-4 flex flex-col gap-3" style={{ fontSize: exportDesktopMode ? "12px" : "clamp(9px, 1.6vw, 12px)" }}>
 
             {/* My Best 3 + もしもコーナー */}
-            <div className="flex gap-3">
+            <div className={`flex gap-3 ${exportDesktopMode ? "flex-row" : "flex-col md:flex-row"}`}>
               <div className="flex-1 rounded-xl p-3 relative overflow-hidden"
                 style={{ background: "linear-gradient(180deg, oklch(0.9 0.1 140), oklch(0.85 0.08 120))", border: "2px solid oklch(0.7 0.12 140 / 0.4)" }}>
                 <h3 className="font-black text-sm mb-2" style={{ color: "oklch(0.45 0.15 140)" }}>🌟 My Best 3</h3>
@@ -703,7 +796,7 @@ export default function ProfileCard() {
                 style={{ background: "linear-gradient(135deg, oklch(0.9 0.08 270), oklch(0.92 0.05 230))", border: "2px solid oklch(0.7 0.12 270 / 0.3)" }}>
                 <h3 className="font-black text-sm mb-1" style={{ color: "oklch(0.5 0.18 270)" }}>🔮 WHICH ONE</h3>
                 <p className="text-xs mb-1.5 opacity-60">あなたはどっち？</p>
-                <div className="grid grid-cols-[0.9fr_1.1fr] gap-x-0 text-xs" style={{ color: "oklch(0.4 0.08 270)" }}>
+                <div className={`grid text-xs ${exportDesktopMode ? "grid-cols-[0.9fr_1.1fr] gap-x-0" : "grid-cols-1 md:grid-cols-[0.9fr_1.1fr] gap-y-1 md:gap-x-0"}`} style={{ color: "oklch(0.4 0.08 270)" }}>
                   <div className="space-y-0.5">
                     {[
                       { q: "動物は", a: "犬・猫", k: "whichAnimal" as const },
@@ -746,7 +839,7 @@ export default function ProfileCard() {
               </div>
             </div>
 
-            <SecretCloudSection data={data} onChange={u} />
+            <SecretCloudSection data={data} onChange={u} desktopMode={exportDesktopMode} />
 
             {/* Bottom deco right */}
             <div className="flex justify-center gap-2 opacity-40 items-center">
